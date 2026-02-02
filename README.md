@@ -30,17 +30,70 @@
 
 ---
 
-> [!IMPORTANT]
-> **🚧 Code Coming Soon**
->
-> We are currently organizing the source code for public release. The complete implementation will be available shortly. Stay tuned!
->
-> **TODO:**
-> - [ ] Training scripts
-> - [ ] K-means partial table generation
-> - [ ] Synthetic query generation pipeline
-> - [ ] Evaluation scripts
-> - [ ] Pre-trained model checkpoints
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yumeow0122/CGPT.git
+cd CGPT
+
+# Install dependencies using uv
+uv sync
+```
+
+## Usage
+
+### Step 1: K-means Partial Table Generation
+
+```bash
+uv run python method/chunk_table.py \
+    --input data/table.jsonl \
+    --output data/chunk.jsonl \
+    --gpu-ids 0 \
+    --min-instances-per-chunk 10 \
+    --max-chunks-per-table 5 \
+    --max-instances-per-representation 5
+```
+
+### Step 2: Synthetic Query Generation
+
+```bash
+uv run python method/synthetic_question.py \
+    --corpus data/chunk.jsonl \
+    --output data/trainset.jsonl \
+    --lang zh \
+    --questions-per-chunk 5
+```
+
+### Step 3: Hard Negative Sampling
+
+```bash
+uv run python method/hard_negative_sampling.py \
+    --trainset-input data/trainset.jsonl \
+    --corpus data/chunk.jsonl \
+    --output data/trainset_with_neg.jsonl \
+    --num-negatives 8 \
+    --gpu-id 0
+```
+
+### Step 4: Contrastive Fine-tuning
+
+```bash
+bash method/train.sh
+```
+
+## Hyperparameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `min-instances-per-chunk` | 10 | Granularity parameter (r) for K-means |
+| `max-chunks-per-table` | 5 | Maximum clusters per table (k_max) |
+| `max-instances-per-representation` | 5 | Instances sampled per cluster (s) |
+| `questions-per-chunk` | 5 | Synthetic queries per partial table (n_q) |
+| `num-negatives` | 8 | Hard negatives per query (h) |
+| `learning-rate` | 1e-5 | Fine-tuning learning rate |
+| `epochs` | 2 | Training epochs |
+| `temperature` | 0.01 | InfoNCE temperature (τ) |
 
 ---
 
